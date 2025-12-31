@@ -9,8 +9,12 @@ import androidx.compose.ui.Modifier
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.jan.mediapipehandsdetection.ui.screens.HandTrackingScreen
 import com.jan.mediapipehandsdetection.ui.theme.MediaPipeHandsDetectionTheme
 
+/**
+ * Main activity for MediaPipe Hands Detection app
+ */
 class MainActivity : ComponentActivity() {
 
     private val viewModel: HandTrackingViewModel by viewModels()

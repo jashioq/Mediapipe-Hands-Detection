@@ -1,9 +1,13 @@
-package com.jan.mediapipehandsdetection
+package com.jan.mediapipehandsdetection.models
 
 import com.google.mediapipe.tasks.components.containers.NormalizedLandmark
 
 /**
  * Represents hand tracking results for a single hand
+ *
+ * @property landmarks List of 21 hand landmarks
+ * @property handedness Whether the hand is left or right
+ * @property timestamp When this result was detected
  */
 data class HandResult(
     val landmarks: List<NormalizedLandmark>,
@@ -18,16 +22,6 @@ enum class HandType {
     LEFT,
     RIGHT
 }
-
-/**
- * Configuration for hand tracking
- */
-data class HandTrackingConfig(
-    val minHandDetectionConfidence: Float = 0.5f,
-    val minHandPresenceConfidence: Float = 0.5f,
-    val minTrackingConfidence: Float = 0.5f,
-    val maxNumHands: Int = 2
-)
 
 /**
  * Hand landmark connections for visualization

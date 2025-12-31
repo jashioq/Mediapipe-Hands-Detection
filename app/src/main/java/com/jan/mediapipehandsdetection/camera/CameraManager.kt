@@ -1,4 +1,4 @@
-package com.jan.mediapipehandsdetection
+package com.jan.mediapipehandsdetection.camera
 
 import android.content.Context
 import androidx.camera.core.CameraSelector
@@ -14,6 +14,12 @@ import java.util.concurrent.Executors
 
 /**
  * Manages CameraX setup and frame capture
+ *
+ * @param context Android context
+ * @param previewView Preview view for camera feed
+ * @param lifecycleOwner Lifecycle owner for camera
+ * @param onFrameAnalyzed Callback for each analyzed frame
+ * @param initialLensFacing Initial camera facing (front or back)
  */
 class CameraManager(
     private val context: Context,
@@ -26,6 +32,9 @@ class CameraManager(
     private val cameraExecutor: ExecutorService = Executors.newSingleThreadExecutor()
     private var lensFacing = initialLensFacing
 
+    /**
+     * Start the camera
+     */
     fun startCamera() {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
 
@@ -35,6 +44,9 @@ class CameraManager(
         }, ContextCompat.getMainExecutor(context))
     }
 
+    /**
+     * Switch between front and back camera
+     */
     fun switchCamera() {
         lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) {
             CameraSelector.LENS_FACING_FRONT
@@ -44,6 +56,9 @@ class CameraManager(
         bindCameraUseCases()
     }
 
+    /**
+     * Bind camera use cases
+     */
     private fun bindCameraUseCases() {
         val cameraProvider = cameraProvider ?: return
 
@@ -86,6 +101,9 @@ class CameraManager(
         }
     }
 
+    /**
+     * Shutdown camera and release resources
+     */
     fun shutdown() {
         cameraExecutor.shutdown()
         cameraProvider?.unbindAll()
