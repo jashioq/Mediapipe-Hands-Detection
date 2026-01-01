@@ -2,6 +2,7 @@ package com.jan.mediapipehandsdetection.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
@@ -10,11 +11,12 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -39,7 +41,7 @@ fun SettingsBottomSheet(
     var detectionConfidence by remember { mutableFloatStateOf(config.minHandDetectionConfidence) }
     var presenceConfidence by remember { mutableFloatStateOf(config.minHandPresenceConfidence) }
     var trackingConfidence by remember { mutableFloatStateOf(config.minTrackingConfidence) }
-    var maxHands by remember { mutableIntStateOf(config.maxNumHands) }
+    var detectTwoHands by remember { mutableStateOf(config.maxNumHands == 2) }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -69,7 +71,7 @@ fun SettingsBottomSheet(
                 Slider(
                     value = detectionConfidence,
                     onValueChange = { detectionConfidence = it },
-                    valueRange = 0f..1f
+                    valueRange = 0.1f..1f
                 )
             }
 
@@ -82,7 +84,7 @@ fun SettingsBottomSheet(
                 Slider(
                     value = presenceConfidence,
                     onValueChange = { presenceConfidence = it },
-                    valueRange = 0f..1f
+                    valueRange = 0.1f..1f
                 )
             }
 
@@ -95,21 +97,22 @@ fun SettingsBottomSheet(
                 Slider(
                     value = trackingConfidence,
                     onValueChange = { trackingConfidence = it },
-                    valueRange = 0f..1f
+                    valueRange = 0.1f..1f
                 )
             }
 
             // Max Number of Hands
-            Column {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
                 Text(
-                    text = "Max Number of Hands: $maxHands",
+                    text = "Detect Two Hands",
                     style = MaterialTheme.typography.bodyMedium
                 )
-                Slider(
-                    value = maxHands.toFloat(),
-                    onValueChange = { maxHands = it.toInt() },
-                    valueRange = 1f..2f,
-                    steps = 0
+                Switch(
+                    checked = detectTwoHands,
+                    onCheckedChange = { detectTwoHands = it }
                 )
             }
 
@@ -121,7 +124,7 @@ fun SettingsBottomSheet(
                         minHandDetectionConfidence = detectionConfidence,
                         minHandPresenceConfidence = presenceConfidence,
                         minTrackingConfidence = trackingConfidence,
-                        maxNumHands = maxHands
+                        maxNumHands = if (detectTwoHands) 2 else 1
                     )
                     onConfigUpdate(newConfig)
                     onDismiss()

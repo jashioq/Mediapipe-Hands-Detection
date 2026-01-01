@@ -12,6 +12,8 @@ import com.jan.mediapipehandsdetection.utils.ImageProcessingUtils
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * MediaPipe-based implementation of [HandDetectionRepository].
@@ -23,37 +25,44 @@ class HandDetectionRepositoryImpl : HandDetectionRepository {
 
     private var handLandmarker: HandLandmarker? = null
     private var context: Context? = null
+    private val landmarkerMutex = Mutex()
 
     private val _detectedHands = MutableStateFlow<List<HandResult>>(emptyList())
     override val detectedHands: StateFlow<List<HandResult>> = _detectedHands.asStateFlow()
 
     override suspend fun initialize(context: Context, config: HandTrackingConfig) {
-        this.context = context
-        handLandmarker = HandLandmarkerFactory.createHandLandmarker(context, config)
+        landmarkerMutex.withLock {
+            this.context = context
+            handLandmarker = HandLandmarkerFactory.createHandLandmarker(context, config)
+        }
     }
 
     override suspend fun processFrame(imageProxy: ImageProxy) {
-        val landmarker = handLandmarker ?: return
+        landmarkerMutex.withLock {
+            val landmarker = handLandmarker ?: return
 
-        val bitmap = ImageProcessingUtils.imageProxyToBitmap(imageProxy)
-        val rotatedBitmap = ImageProcessingUtils.rotateBitmap(
-            bitmap,
-            imageProxy.imageInfo.rotationDegrees.toFloat()
-        )
+            val bitmap = ImageProcessingUtils.imageProxyToBitmap(imageProxy)
+            val rotatedBitmap = ImageProcessingUtils.rotateBitmap(
+                bitmap,
+                imageProxy.imageInfo.rotationDegrees.toFloat()
+            )
 
-        val mpImage = BitmapImageBuilder(rotatedBitmap).build()
-        val timestamp = System.currentTimeMillis()
-        val result = landmarker.detectForVideo(mpImage, timestamp)
+            val mpImage = BitmapImageBuilder(rotatedBitmap).build()
+            val timestamp = System.currentTimeMillis()
+            val result = landmarker.detectForVideo(mpImage, timestamp)
 
-        result?.let {
-            _detectedHands.emit(processHandLandmarkerResult(it))
+            result?.let {
+                _detectedHands.emit(processHandLandmarkerResult(it))
+            }
         }
     }
 
     override suspend fun updateConfig(config: HandTrackingConfig) {
-        val ctx = context ?: return
-        handLandmarker?.close()
-        handLandmarker = HandLandmarkerFactory.createHandLandmarker(ctx, config)
+        landmarkerMutex.withLock {
+            val ctx = context ?: return
+            handLandmarker?.close()
+            handLandmarker = HandLandmarkerFactory.createHandLandmarker(ctx, config)
+        }
     }
 
     private fun processHandLandmarkerResult(result: HandLandmarkerResult) =
