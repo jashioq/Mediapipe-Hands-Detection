@@ -5,7 +5,8 @@
       "Bash(find:*)",
       "Bash(cat:*)",
       "Bash(gradlew.bat assembleDebug:*)",
-      "Bash(./gradlew assembleDebug:*)"
+      "Bash(./gradlew assembleDebug:*)",
+      "Bash(.gradlew.bat assembleDebug:*)"
     ]
   }
 }

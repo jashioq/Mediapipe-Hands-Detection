@@ -3,6 +3,7 @@ package com.jan.mediapipehandsdetection.utils
 import android.graphics.Bitmap
 import android.graphics.Matrix
 import androidx.camera.core.ImageProxy
+import androidx.core.graphics.createBitmap
 
 /**
  * Utility functions for image processing operations
@@ -16,11 +17,7 @@ object ImageProcessingUtils {
      * @return Bitmap in ARGB_8888 format
      */
     fun imageProxyToBitmap(imageProxy: ImageProxy): Bitmap {
-        val bitmap = Bitmap.createBitmap(
-            imageProxy.width,
-            imageProxy.height,
-            Bitmap.Config.ARGB_8888
-        )
+        val bitmap = createBitmap(imageProxy.width, imageProxy.height)
 
         val buffer = imageProxy.planes[0].buffer
         buffer.rewind()

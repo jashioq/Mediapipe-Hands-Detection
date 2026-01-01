@@ -13,6 +13,7 @@ import com.jan.mediapipehandsdetection.models.HandType
 import com.jan.mediapipehandsdetection.models.HandLandmarkConnections
 import com.jan.mediapipehandsdetection.utils.AspectRatioUtils
 import com.jan.mediapipehandsdetection.utils.CoordinateTransformationUtils
+import com.jan.mediapipehandsdetection.utils.LetterboxBounds
 
 /**
  * Drawing constants for hand landmarks
@@ -29,15 +30,14 @@ private object DrawingConstants {
  * @param viewWidth Width of the view
  * @param viewHeight Height of the view
  * @param isFrontCamera Whether the front camera is active
- * @param modifier Optional modifier
  */
 @Composable
 fun HandLandmarkOverlay(
+    modifier: Modifier = Modifier,
     detectedHands: List<HandResult>,
     viewWidth: Float,
     viewHeight: Float,
     isFrontCamera: Boolean = false,
-    modifier: Modifier = Modifier
 ) {
     Canvas(modifier = modifier.fillMaxSize()) {
         // Calculate letterbox bounds for camera preview
@@ -75,7 +75,7 @@ fun HandLandmarkOverlay(
  */
 private fun DrawScope.drawHandConnections(
     handResult: HandResult,
-    bounds: com.jan.mediapipehandsdetection.utils.LetterboxBounds,
+    bounds: LetterboxBounds,
     isFrontCamera: Boolean,
     color: Color
 ) {
@@ -131,7 +131,7 @@ private fun DrawScope.drawHandConnections(
  */
 private fun DrawScope.drawHandLandmarks(
     handResult: HandResult,
-    bounds: com.jan.mediapipehandsdetection.utils.LetterboxBounds,
+    bounds: LetterboxBounds,
     isFrontCamera: Boolean,
     color: Color
 ) {

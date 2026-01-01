@@ -12,15 +12,6 @@ import androidx.lifecycle.LifecycleOwner
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
-/**
- * Manages CameraX setup and frame capture
- *
- * @param context Android context
- * @param previewView Preview view for camera feed
- * @param lifecycleOwner Lifecycle owner for camera
- * @param onFrameAnalyzed Callback for each analyzed frame
- * @param initialLensFacing Initial camera facing (front or back)
- */
 class CameraManager(
     private val context: Context,
     private val previewView: PreviewView,
@@ -28,84 +19,57 @@ class CameraManager(
     private val onFrameAnalyzed: (ImageProxy) -> Unit,
     initialLensFacing: Int = CameraSelector.LENS_FACING_BACK
 ) {
-    private var cameraProvider: ProcessCameraProvider? = null
+    private lateinit var cameraProvider: ProcessCameraProvider
     private val cameraExecutor: ExecutorService = Executors.newSingleThreadExecutor()
     private var lensFacing = initialLensFacing
 
-    /**
-     * Start the camera
-     */
     fun startCamera() {
-        val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
-
-        cameraProviderFuture.addListener({
-            cameraProvider = cameraProviderFuture.get()
-            bindCameraUseCases()
-        }, ContextCompat.getMainExecutor(context))
+        ProcessCameraProvider.getInstance(context).apply {
+            addListener({
+                cameraProvider = get()
+                bindCameraUseCases()
+            }, ContextCompat.getMainExecutor(context))
+        }
     }
 
-    /**
-     * Switch between front and back camera
-     */
     fun switchCamera() {
-        lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) {
-            CameraSelector.LENS_FACING_FRONT
-        } else {
-            CameraSelector.LENS_FACING_BACK
+        lensFacing = when (lensFacing) {
+            CameraSelector.LENS_FACING_BACK -> CameraSelector.LENS_FACING_FRONT
+            else -> CameraSelector.LENS_FACING_BACK
         }
         bindCameraUseCases()
     }
 
-    /**
-     * Bind camera use cases
-     */
     private fun bindCameraUseCases() {
-        val cameraProvider = cameraProvider ?: return
+        if (!::cameraProvider.isInitialized) return
 
-        // Unbind all use cases before rebinding
         cameraProvider.unbindAll()
-
-        // CameraSelector
-        val cameraSelector = CameraSelector.Builder()
-            .requireLensFacing(lensFacing)
-            .build()
-
-        // Preview
-        val preview = Preview.Builder()
-            .build()
-            .also {
-                it.setSurfaceProvider(previewView.surfaceProvider)
-            }
-
-        // ImageAnalysis
-        val imageAnalyzer = ImageAnalysis.Builder()
-            .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-            .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888)
-            .build()
-            .also { analysis ->
-                analysis.setAnalyzer(cameraExecutor) { imageProxy ->
-                    onFrameAnalyzed(imageProxy)
-                }
-            }
-
-        try {
-            // Bind use cases to camera
-            cameraProvider.bindToLifecycle(
-                lifecycleOwner,
-                cameraSelector,
-                preview,
-                imageAnalyzer
-            )
-        } catch (exc: Exception) {
-            exc.printStackTrace()
-        }
+        cameraProvider.bindToLifecycle(
+            lifecycleOwner,
+            createCameraSelector(),
+            createPreview(),
+            createImageAnalyzer()
+        )
     }
 
-    /**
-     * Shutdown camera and release resources
-     */
+    private fun createCameraSelector() = CameraSelector.Builder()
+        .requireLensFacing(lensFacing)
+        .build()
+
+    private fun createPreview() = Preview.Builder()
+        .build()
+        .also { it.setSurfaceProvider(previewView.surfaceProvider) }
+
+    private fun createImageAnalyzer() = ImageAnalysis.Builder()
+        .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+        .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888)
+        .build()
+        .also { it.setAnalyzer(cameraExecutor, onFrameAnalyzed) }
+
     fun shutdown() {
-        cameraExecutor.shutdown()
-        cameraProvider?.unbindAll()
+        cameraExecutor.shutdownNow()
+        if (::cameraProvider.isInitialized) {
+            cameraProvider.unbindAll()
+        }
     }
 }

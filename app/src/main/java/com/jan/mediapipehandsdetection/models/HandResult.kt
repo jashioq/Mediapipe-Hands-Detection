@@ -31,7 +31,7 @@ object HandLandmarkConnections {
         // Thumb
         0 to 1, 1 to 2, 2 to 3, 3 to 4,
         // Index finger
-        0 to 5, 5 to 6, 6 to 7, 7 to 8,
+        5 to 6, 6 to 7, 7 to 8,
         // Middle finger
         5 to 9, 9 to 10, 10 to 11, 11 to 12,
         // Ring finger
@@ -39,6 +39,6 @@ object HandLandmarkConnections {
         // Pinky
         13 to 17, 17 to 18, 18 to 19, 19 to 20,
         // Palm
-        0 to 17
+        0 to 17, 2 to 5
     )
 }

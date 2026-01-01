@@ -22,14 +22,12 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Hide system bars for immersive experience
         hideSystemBars()
 
         setContent {
             MediaPipeHandsDetectionTheme {
                 HandTrackingScreen(
                     viewModel = viewModel,
-                    modifier = Modifier.fillMaxSize()
                 )
             }
         }

@@ -1,6 +1,7 @@
 package com.jan.mediapipehandsdetection.ui.screens
 
-import android.view.ViewGroup
+import android.Manifest.permission.CAMERA
+import androidx.camera.core.CameraSelector.LENS_FACING_FRONT
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -26,7 +27,7 @@ import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.jan.mediapipehandsdetection.HandTrackingViewModel
 import com.jan.mediapipehandsdetection.camera.CameraManager
-import com.jan.mediapipehandsdetection.ui.components.CameraPermissionDenied
+import com.jan.mediapipehandsdetection.ui.components.PermissionView
 import com.jan.mediapipehandsdetection.ui.components.HandLandmarkOverlay
 import com.jan.mediapipehandsdetection.ui.components.SettingsBottomSheet
 import com.jan.mediapipehandsdetection.ui.components.TransparentIconButton
@@ -40,7 +41,7 @@ fun HandTrackingScreen(
     viewModel: HandTrackingViewModel,
     modifier: Modifier = Modifier
 ) {
-    val cameraPermissionState = rememberPermissionState(android.Manifest.permission.CAMERA)
+    val cameraPermissionState = rememberPermissionState(CAMERA)
 
     LaunchedEffect(Unit) {
         if (!cameraPermissionState.status.isGranted) {
@@ -50,11 +51,10 @@ fun HandTrackingScreen(
 
     when {
         cameraPermissionState.status.isGranted -> {
-            HandTrackingContent(viewModel = viewModel, modifier = modifier)
+            HandTrackingView(viewModel = viewModel, modifier = modifier)
         }
         else -> {
-            CameraPermissionDenied(
-                permissionState = cameraPermissionState,
+            PermissionView(
                 modifier = modifier
             )
         }
@@ -65,7 +65,7 @@ fun HandTrackingScreen(
  * Main content for hand tracking screen
  */
 @Composable
-private fun HandTrackingContent(
+private fun HandTrackingView(
     viewModel: HandTrackingViewModel,
     modifier: Modifier = Modifier
 ) {
@@ -73,58 +73,75 @@ private fun HandTrackingContent(
     val lifecycleOwner = LocalLifecycleOwner.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    var previewView by remember { mutableStateOf<PreviewView?>(null) }
-    var cameraManager by remember { mutableStateOf<CameraManager?>(null) }
+    // Create PreviewView once
+    val previewView = remember {
+        PreviewView(context).apply {
+            scaleType = PreviewView.ScaleType.FIT_CENTER
+            implementationMode = PreviewView.ImplementationMode.COMPATIBLE
+        }
+    }
+
+    // Track view size for overlay coordinate mapping
     var viewSize by remember { mutableStateOf(Pair(0f, 0f)) }
+
+    // Create CameraManager once
+    val cameraManager = remember(previewView) {
+        CameraManager(
+            context = context,
+            previewView = previewView,
+            lifecycleOwner = lifecycleOwner,
+            onFrameAnalyzed = viewModel::processFrame,
+            initialLensFacing = uiState.cameraFacing
+        )
+    }
 
     // Initialize MediaPipe
     LaunchedEffect(Unit) {
         viewModel.initializeHandLandmarker(context)
     }
 
-    // Initialize camera when camera facing changes
+    // Start camera once
+    LaunchedEffect(cameraManager) {
+        cameraManager.startCamera()
+    }
+
+    // Handle camera switch
     LaunchedEffect(uiState.cameraFacing) {
-        cameraManager?.switchCamera()
+        cameraManager.switchCamera()
     }
 
-    DisposableEffect(Unit) {
+    // Cleanup
+    DisposableEffect(cameraManager) {
         onDispose {
-            cameraManager?.shutdown()
+            cameraManager.shutdown()
         }
     }
 
-    Box(modifier = modifier
-        .fillMaxSize()
-        .onGloballyPositioned { coordinates ->
-            viewSize = Pair(coordinates.size.width.toFloat(), coordinates.size.height.toFloat())
-        }
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .onGloballyPositioned { coordinates ->
+                viewSize = Pair(
+                    coordinates.size.width.toFloat(),
+                    coordinates.size.height.toFloat()
+                )
+            }
     ) {
-        // Camera Preview
-        AndroidView(
-            factory = { ctx ->
-                PreviewView(ctx).apply {
-                    layoutParams = ViewGroup.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.MATCH_PARENT
-                    )
-                    scaleType = PreviewView.ScaleType.FIT_CENTER
-                    implementationMode = PreviewView.ImplementationMode.COMPATIBLE
-
-                    previewView = this
-
-                    // Initialize camera manager
-                    cameraManager = CameraManager(
-                        context = ctx,
-                        previewView = this,
-                        lifecycleOwner = lifecycleOwner,
-                        onFrameAnalyzed = { imageProxy ->
-                            viewModel.processFrame(imageProxy)
-                        },
-                        initialLensFacing = uiState.cameraFacing
-                    ).also { it.startCamera() }
+        // Settings bottom sheet (top of Z-order)
+        if (uiState.showSettingsSheet) {
+            SettingsBottomSheet(
+                config = uiState.config,
+                onDismiss = { viewModel.toggleSettingsSheet() },
+                onConfigUpdate = { newConfig ->
+                    viewModel.updateConfig(newConfig, context)
                 }
-            },
-            modifier = Modifier.fillMaxSize()
+            )
+        }
+
+        // Camera preview (base layer)
+        AndroidView(
+            factory = { previewView },
+            modifier = Modifier.matchParentSize()
         )
 
         // Hand landmark overlay
@@ -132,26 +149,17 @@ private fun HandTrackingContent(
             detectedHands = uiState.detectedHands,
             viewWidth = viewSize.first,
             viewHeight = viewSize.second,
-            isFrontCamera = uiState.cameraFacing == androidx.camera.core.CameraSelector.LENS_FACING_FRONT,
-            modifier = Modifier.fillMaxSize()
+            isFrontCamera = uiState.cameraFacing == LENS_FACING_FRONT
         )
 
-        // UI Controls
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
-        ) {
-            // Top row with controls
+        // UI controls (top layer)
+        Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Top
             ) {
-                // Settings and Camera Switch buttons
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     TransparentIconButton(
                         icon = Icons.Default.Settings,
                         contentDescription = "Settings",
@@ -165,7 +173,6 @@ private fun HandTrackingContent(
                     )
                 }
 
-                // FPS Counter
                 Text(
                     text = "FPS: ${uiState.fps}",
                     color = Color.White,
@@ -179,17 +186,6 @@ private fun HandTrackingContent(
                         .padding(horizontal = 12.dp, vertical = 8.dp)
                 )
             }
-        }
-
-        // Settings Bottom Sheet
-        if (uiState.showSettingsSheet) {
-            SettingsBottomSheet(
-                config = uiState.config,
-                onDismiss = { viewModel.toggleSettingsSheet() },
-                onConfigUpdate = { newConfig ->
-                    viewModel.updateConfig(newConfig, context)
-                }
-            )
         }
     }
 }
