@@ -6,9 +6,6 @@ import com.google.mediapipe.tasks.vision.core.RunningMode
 import com.google.mediapipe.tasks.vision.handlandmarker.HandLandmarker
 import com.jan.mediapipehandsdetection.models.HandTrackingConfig
 
-/**
- * Factory for creating MediaPipe HandLandmarker instances
- */
 object HandLandmarkerFactory {
 
     /**
@@ -17,7 +14,6 @@ object HandLandmarkerFactory {
      * @param context Android context
      * @param config Hand tracking configuration
      * @return Configured HandLandmarker instance
-     * @throws Exception if model file is not found or initialization fails
      */
     fun createHandLandmarker(
         context: Context,

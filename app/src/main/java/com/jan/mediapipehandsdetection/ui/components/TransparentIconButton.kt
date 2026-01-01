@@ -11,7 +11,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 
 /**
- * Reusable icon button with semi-transparent black background
+ * Icon button with semi transparent black background
  *
  * @param icon The icon to display
  * @param contentDescription Accessibility description

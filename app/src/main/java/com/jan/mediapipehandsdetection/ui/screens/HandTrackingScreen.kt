@@ -32,9 +32,6 @@ import com.jan.mediapipehandsdetection.ui.components.HandLandmarkOverlay
 import com.jan.mediapipehandsdetection.ui.components.SettingsBottomSheet
 import com.jan.mediapipehandsdetection.ui.components.TransparentIconButton
 
-/**
- * Main screen for hand tracking
- */
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun HandTrackingScreen(
@@ -61,9 +58,6 @@ fun HandTrackingScreen(
     }
 }
 
-/**
- * Main content for hand tracking screen
- */
 @Composable
 private fun HandTrackingView(
     viewModel: HandTrackingViewModel,
@@ -73,7 +67,6 @@ private fun HandTrackingView(
     val lifecycleOwner = LocalLifecycleOwner.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    // Create PreviewView once
     val previewView = remember {
         PreviewView(context).apply {
             scaleType = PreviewView.ScaleType.FIT_CENTER
@@ -84,7 +77,6 @@ private fun HandTrackingView(
     // Track view size for overlay coordinate mapping
     var viewSize by remember { mutableStateOf(Pair(0f, 0f)) }
 
-    // Create CameraManager once
     val cameraManager = remember(previewView) {
         CameraManager(
             context = context,
@@ -95,26 +87,16 @@ private fun HandTrackingView(
         )
     }
 
-    // Initialize MediaPipe
     LaunchedEffect(Unit) {
         viewModel.initializeHandLandmarker(context)
     }
 
-    // Start camera once
     LaunchedEffect(cameraManager) {
         cameraManager.startCamera()
     }
 
-    // Handle camera switch
     LaunchedEffect(uiState.cameraFacing) {
         cameraManager.switchCamera()
-    }
-
-    // Cleanup
-    DisposableEffect(cameraManager) {
-        onDispose {
-            cameraManager.shutdown()
-        }
     }
 
     Box(
@@ -127,24 +109,21 @@ private fun HandTrackingView(
                 )
             }
     ) {
-        // Settings bottom sheet (top of Z-order)
         if (uiState.showSettingsSheet) {
             SettingsBottomSheet(
                 config = uiState.config,
                 onDismiss = { viewModel.toggleSettingsSheet() },
                 onConfigUpdate = { newConfig ->
-                    viewModel.updateConfig(newConfig, context)
+                    viewModel.updateConfig(newConfig)
                 }
             )
         }
 
-        // Camera preview (base layer)
         AndroidView(
             factory = { previewView },
             modifier = Modifier.matchParentSize()
         )
 
-        // Hand landmark overlay
         HandLandmarkOverlay(
             detectedHands = uiState.detectedHands,
             viewWidth = viewSize.first,
@@ -152,7 +131,6 @@ private fun HandTrackingView(
             isFrontCamera = uiState.cameraFacing == LENS_FACING_FRONT
         )
 
-        // UI controls (top layer)
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),

@@ -7,20 +7,28 @@ import com.google.mediapipe.tasks.vision.handlandmarker.HandLandmarker
 import com.google.mediapipe.tasks.vision.handlandmarker.HandLandmarkerResult
 import com.jan.mediapipehandsdetection.models.HandResult
 import com.jan.mediapipehandsdetection.models.HandTrackingConfig
-import com.jan.mediapipehandsdetection.models.HandType
+import com.jan.mediapipehandsdetection.models.HandSide
 import com.jan.mediapipehandsdetection.utils.ImageProcessingUtils
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
+/**
+ * MediaPipe-based implementation of [HandDetectionRepository].
+ *
+ * Converts camera frames to bitmaps, performs hand detection using MediaPipe,
+ * and emits results via StateFlow.
+ */
 class HandDetectionRepositoryImpl : HandDetectionRepository {
 
     private var handLandmarker: HandLandmarker? = null
+    private var context: Context? = null
 
     private val _detectedHands = MutableStateFlow<List<HandResult>>(emptyList())
     override val detectedHands: StateFlow<List<HandResult>> = _detectedHands.asStateFlow()
 
     override suspend fun initialize(context: Context, config: HandTrackingConfig) {
+        this.context = context
         handLandmarker = HandLandmarkerFactory.createHandLandmarker(context, config)
     }
 
@@ -42,14 +50,10 @@ class HandDetectionRepositoryImpl : HandDetectionRepository {
         }
     }
 
-    override suspend fun updateConfig(context: Context, config: HandTrackingConfig) {
+    override suspend fun updateConfig(config: HandTrackingConfig) {
+        val ctx = context ?: return
         handLandmarker?.close()
-        handLandmarker = HandLandmarkerFactory.createHandLandmarker(context, config)
-    }
-
-    override fun close() {
-        handLandmarker?.close()
-        handLandmarker = null
+        handLandmarker = HandLandmarkerFactory.createHandLandmarker(ctx, config)
     }
 
     private fun processHandLandmarkerResult(result: HandLandmarkerResult) =
@@ -60,10 +64,10 @@ class HandDetectionRepositoryImpl : HandDetectionRepository {
                 ?.categoryName()
                 ?.let { name ->
                     when (name.lowercase()) {
-                        "left" -> HandType.LEFT
-                        else -> HandType.RIGHT
+                        "left" -> HandSide.LEFT
+                        else -> HandSide.RIGHT
                     }
-                } ?: HandType.RIGHT
+                } ?: HandSide.RIGHT
 
             HandResult(landmarks, handedness)
         }

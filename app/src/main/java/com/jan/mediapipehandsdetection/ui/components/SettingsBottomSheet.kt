@@ -115,7 +115,6 @@ fun SettingsBottomSheet(
 
             Divider()
 
-            // Apply button
             Button(
                 onClick = {
                     val newConfig = HandTrackingConfig(

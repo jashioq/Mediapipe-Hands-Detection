@@ -17,15 +17,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/**
- * ViewModel for hand tracking screen
- *
- * Responsibilities:
- * - Manage UI state
- * - Handle user interactions
- * - Delegate hand detection to repository
- * - Track FPS
- */
 class HandTrackingViewModel(
     private val repository: HandDetectionRepository = HandDetectionRepositoryImpl(),
     private val fpsCounter: FpsCounter = FpsCounter()
@@ -35,7 +26,6 @@ class HandTrackingViewModel(
     val uiState: StateFlow<HandTrackingUiState> = _uiState.asStateFlow()
 
     init {
-        // Observe repository's detected hands flow
         viewModelScope.launch {
             repository.detectedHands.collect { hands ->
                 _uiState.update { it.copy(detectedHands = hands) }
@@ -43,25 +33,17 @@ class HandTrackingViewModel(
         }
     }
 
-    /**
-     * Initialize the hand landmarker
-     */
     fun initializeHandLandmarker(context: Context) {
         viewModelScope.launch {
             repository.initialize(context, _uiState.value.config)
         }
     }
 
-    /**
-     * Process a camera frame
-     */
     fun processFrame(imageProxy: ImageProxy) {
         viewModelScope.launch(Dispatchers.Default) {
             try {
-                // Process frame via repository (results come via flow)
                 repository.processFrame(imageProxy)
 
-                // Update FPS
                 fpsCounter.recordFrame()
                 _uiState.update { it.copy(fps = fpsCounter.getCurrentFps()) }
             } finally {
@@ -70,9 +52,6 @@ class HandTrackingViewModel(
         }
     }
 
-    /**
-     * Toggle between front and back camera
-     */
     fun toggleCamera() {
         _uiState.update { currentState ->
             currentState.copy(
@@ -85,26 +64,15 @@ class HandTrackingViewModel(
         }
     }
 
-    /**
-     * Update hand tracking configuration
-     */
-    fun updateConfig(newConfig: HandTrackingConfig, context: Context) {
+    fun updateConfig(newConfig: HandTrackingConfig) {
         viewModelScope.launch {
-            repository.updateConfig(context, newConfig)
+            repository.updateConfig(newConfig)
             _uiState.update { it.copy(config = newConfig) }
         }
     }
 
-    /**
-     * Toggle settings bottom sheet visibility
-     */
     fun toggleSettingsSheet() {
         _uiState.update { it.copy(showSettingsSheet = !it.showSettingsSheet) }
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        repository.close()
     }
 }
 
@@ -113,7 +81,7 @@ class HandTrackingViewModel(
  *
  * @property detectedHands List of currently detected hands
  * @property fps Current frames per second
- * @property cameraFacing Current camera facing (front or back)
+ * @property cameraFacing Current camera facing mode (front or back)
  * @property config Hand tracking configuration
  * @property showSettingsSheet Whether settings sheet is visible
  */

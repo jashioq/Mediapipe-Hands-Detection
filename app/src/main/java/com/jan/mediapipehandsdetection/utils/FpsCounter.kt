@@ -1,8 +1,5 @@
 package com.jan.mediapipehandsdetection.utils
 
-/**
- * Utility class for tracking frames per second (FPS)
- */
 class FpsCounter {
     private var frameCount = 0
     private var fpsUpdateTime = System.currentTimeMillis()
@@ -23,10 +20,5 @@ class FpsCounter {
         }
     }
 
-    /**
-     * Gets the current FPS value
-     *
-     * @return Current frames per second
-     */
     fun getCurrentFps(): Int = currentFps
 }

@@ -12,6 +12,16 @@ import androidx.lifecycle.LifecycleOwner
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
+/**
+ * Provides camera initialization, switching, and frame delivery to
+ * the hand detection pipeline.
+ *
+ * @property context Android context
+ * @property previewView Surface for camera preview display
+ * @property lifecycleOwner Lifecycle owner for camera binding
+ * @property onFrameAnalyzed Callback invoked for each analyzed frame
+ * @property initialLensFacing Initial camera facing direction (front/back)
+ */
 class CameraManager(
     private val context: Context,
     private val previewView: PreviewView,
@@ -23,6 +33,9 @@ class CameraManager(
     private val cameraExecutor: ExecutorService = Executors.newSingleThreadExecutor()
     private var lensFacing = initialLensFacing
 
+    /**
+     * Initializes and starts the camera with current configuration.
+     */
     fun startCamera() {
         ProcessCameraProvider.getInstance(context).apply {
             addListener({
@@ -32,6 +45,10 @@ class CameraManager(
         }
     }
 
+    /**
+     * Switches between front and back camera.
+     * Rebinds camera use cases with the new camera facing mode.
+     */
     fun switchCamera() {
         lensFacing = when (lensFacing) {
             CameraSelector.LENS_FACING_BACK -> CameraSelector.LENS_FACING_FRONT
@@ -65,11 +82,4 @@ class CameraManager(
         .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888)
         .build()
         .also { it.setAnalyzer(cameraExecutor, onFrameAnalyzed) }
-
-    fun shutdown() {
-        cameraExecutor.shutdownNow()
-        if (::cameraProvider.isInitialized) {
-            cameraProvider.unbindAll()
-        }
-    }
 }

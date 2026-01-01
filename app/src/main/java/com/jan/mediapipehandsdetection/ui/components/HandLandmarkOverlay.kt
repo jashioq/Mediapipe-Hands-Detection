@@ -9,7 +9,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.unit.dp
 import com.jan.mediapipehandsdetection.models.HandResult
-import com.jan.mediapipehandsdetection.models.HandType
+import com.jan.mediapipehandsdetection.models.HandSide
 import com.jan.mediapipehandsdetection.models.HandLandmarkConnections
 import com.jan.mediapipehandsdetection.utils.AspectRatioUtils
 import com.jan.mediapipehandsdetection.utils.CoordinateTransformationUtils
@@ -46,9 +46,9 @@ fun HandLandmarkOverlay(
         val bounds = AspectRatioUtils.calculateLetterboxBounds(size, cameraAspectRatio)
 
         detectedHands.forEach { handResult ->
-            val color = when (handResult.handedness) {
-                HandType.LEFT -> Color(0xFFFF5100) // Red for left hand
-                HandType.RIGHT -> Color(0xFF0080FF) // Blue for right hand
+            val color = when (handResult.handedSide) {
+                HandSide.LEFT -> Color(0xFFFF5100) // Red for left hand
+                HandSide.RIGHT -> Color(0xFF0080FF) // Blue for right hand
             }
 
             // Draw connections first (so they appear behind landmarks)
@@ -70,9 +70,6 @@ fun HandLandmarkOverlay(
     }
 }
 
-/**
- * Draw landmark connections
- */
 private fun DrawScope.drawHandConnections(
     handResult: HandResult,
     bounds: LetterboxBounds,
@@ -126,9 +123,6 @@ private fun DrawScope.drawHandConnections(
     }
 }
 
-/**
- * Draw hand landmarks as circles
- */
 private fun DrawScope.drawHandLandmarks(
     handResult: HandResult,
     bounds: LetterboxBounds,

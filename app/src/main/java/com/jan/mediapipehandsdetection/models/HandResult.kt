@@ -6,19 +6,16 @@ import com.google.mediapipe.tasks.components.containers.NormalizedLandmark
  * Represents hand tracking results for a single hand
  *
  * @property landmarks List of 21 hand landmarks
- * @property handedness Whether the hand is left or right
+ * @property handedSide Whether the hand is left or right
  * @property timestamp When this result was detected
  */
 data class HandResult(
     val landmarks: List<NormalizedLandmark>,
-    val handedness: HandType,
+    val handedSide: HandSide,
     val timestamp: Long = System.currentTimeMillis()
 )
 
-/**
- * Hand type (left or right)
- */
-enum class HandType {
+enum class HandSide {
     LEFT,
     RIGHT
 }
