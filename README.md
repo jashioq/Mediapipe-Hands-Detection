@@ -2,6 +2,8 @@
 
 A real-time hand tracking Android app using MediaPipe. Detects up to 2 hands simultaneously and visualizes 21 landmarks per hand overlaid on the camera preview. Uses MVVM architecture.
 
+https://github.com/user-attachments/assets/55e474bf-5ce1-41ee-8090-fe54366d1a23
+
 ## How it works
 
 This app transforms camera frames into hand landmark coordinates through a 4 step pipeline:
