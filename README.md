@@ -135,24 +135,3 @@ drawCircle(
 2. Account for letterbox offsets (black bars on sides or top and bottom)
 3. Mirror X-axis for front camera (to match preview)
 4. Apply offsets to center content in view
-
----
-
-## Configuration options
-
-Adjustable via settings bottom sheet:
-
-```kotlin
-data class HandTrackingConfig(
-    val minHandDetectionConfidence: Float = 0.5f,
-    val minHandPresenceConfidence: Float = 0.5f,
-    val minTrackingConfidence: Float = 0.5f,
-    val maxNumHands: Int = 2
-)
-```
-
-**Parameters explained:**
-- **Detection confidence**: Initial hand detection threshold (higher = fewer false positives)
-- **Presence confidence**: Confidence threshold for hand still being present in frame
-- **Tracking confidence**: Landmark tracking threshold (higher = more stable, but may drop hands)
-- **Max hands**: Number of hands to detect (1 or 2)
