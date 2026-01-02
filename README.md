@@ -4,6 +4,27 @@ A real-time hand tracking Android app using MediaPipe. Detects up to 2 hands sim
 
 https://github.com/user-attachments/assets/55e474bf-5ce1-41ee-8090-fe54366d1a23
 
+## Configuration options
+
+Adjustable via settings bottom sheet:
+
+```kotlin
+data class HandTrackingConfig(
+    val minHandDetectionConfidence: Float = 0.5f,
+    val minHandPresenceConfidence: Float = 0.5f,
+    val minTrackingConfidence: Float = 0.5f,
+    val maxNumHands: Int = 2
+)
+```
+
+**Parameters explained:**
+- **Detection confidence**: Initial hand detection threshold (higher = fewer false positives)
+- **Presence confidence**: Confidence threshold for hand still being present in frame
+- **Tracking confidence**: Landmark tracking threshold (higher = more stable, but may drop hands)
+- **Max hands**: Number of hands to detect (1 or 2)
+
+---
+
 ## How it works
 
 This app transforms camera frames into hand landmark coordinates through a 4 step pipeline:
